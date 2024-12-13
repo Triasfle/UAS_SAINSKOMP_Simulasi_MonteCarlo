@@ -1,0 +1,96 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import random
+
+# Function to simulate route times using stochastic simulation (Monte Carlo)
+def simulate_route(route_length, avg_speed, traffic_variation, num_simulations=1000):
+    times = []
+    for _ in range(num_simulations):
+        # Simulate traffic impact
+        traffic_factor = random.choices(traffic_variation['factors'], traffic_variation['probabilities'])[0]
+        speed = avg_speed * traffic_factor
+        time = route_length / speed  # Time = Distance / Speed
+        times.append(time)
+    return times
+
+# Function to calculate statistics for simulated route times
+def calculate_statistics(times):
+    mean_time = np.mean(times)
+    std_dev = np.std(times)
+    return mean_time, std_dev
+
+# Function to compare routes
+def compare_routes(route_data, num_simulations=1000):
+    results = {}
+    for route_name, data in route_data.items():
+        times = simulate_route(
+            route_length=data['length'],
+            avg_speed=data['avg_speed'],
+            traffic_variation=data['traffic_variation'],
+            num_simulations=num_simulations
+        )
+        mean_time, std_dev = calculate_statistics(times)
+        results[route_name] = {
+            'mean_time': mean_time,
+            'std_dev': std_dev,
+            'times': times
+        }
+    return results
+
+# Visualize the results with KDE plot
+def plot_results_with_kde(results):
+    plt.figure(figsize=(10, 6))
+    for route_name, data in results.items():
+        sns.kdeplot(data['times'], label=f"{route_name} (Mean: {data['mean_time']:.2f} mins)", fill=True, alpha=0.4)
+    plt.xlabel('Time (minutes)')
+    plt.ylabel('Density')
+    plt.title('Route Time Comparison with KDE')
+    plt.legend()
+    plt.show()
+
+# Example case: Compare two routes
+route_data = {
+    'Route A': {
+        'length': 10,  # km
+        'avg_speed': 40,  # km/h
+        'traffic_variation': {
+            'factors': [1.0, 0.8, 0.5],  # Normal, moderate traffic, heavy traffic
+            'probabilities': [0.7, 0.2, 0.1]  # Probabilities of each traffic condition
+        }
+    },
+    'Route B': {
+        'length': 8,  # km
+        'avg_speed': 30,  # km/h
+        'traffic_variation': {
+            'factors': [1.0, 0.7, 0.4],  # Normal, moderate traffic, heavy traffic
+            'probabilities': [0.6, 0.3, 0.1]  # Probabilities of each traffic condition
+        }
+    },
+    'Route C': {
+        'length': 15,  # km
+        'avg_speed': 50,  # km/h
+        'traffic_variation': {
+            'factors': [1.0, 0.6, 0.3],  # Normal, moderate traffic, heavy traffic
+            'probabilities': [0.5, 0.3, 0.2]  # Probabilities of each traffic condition
+        }
+    },
+    'Route D': {
+        'length': 12,  # km
+        'avg_speed': 35,  # km/h
+        'traffic_variation': {
+            'factors': [1.0, 0.7, 0.5],  # Normal, moderate traffic, heavy traffic
+            'probabilities': [0.65, 0.25, 0.1]  # Probabilities of each traffic condition
+        }
+    }
+}
+
+# Simulate and compare routes
+results = compare_routes(route_data, num_simulations=1000)
+
+# Print results
+for route_name, data in results.items():
+    print(f"{route_name}: Mean Time = {data['mean_time']:.2f} mins, Std Dev = {data['std_dev']:.2f} mins")
+
+# Plot the results with KDE
+plot_results_with_kde(results)
